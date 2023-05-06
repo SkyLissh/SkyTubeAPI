@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  app:
+    image: "skytube-api:latest"
+    container_name: "skytube-api"
+    restart: always
+    depends_on:
+      - db
+    build:
+      target: prod
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    command: sh ./scripts/start-prod.sh

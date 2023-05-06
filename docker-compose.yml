@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  app:
+    image: "skytube-api:dev"
+    container_name: "skytube-api"
+    restart: unless-stopped
+    build:
+      target: dev
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/SkyTube
+    ports:
+      - "8000:8000"
+    command: sh ./scripts/start-dev.sh
