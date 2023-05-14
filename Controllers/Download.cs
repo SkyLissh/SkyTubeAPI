@@ -42,7 +42,9 @@ public class DownloadController : ControllerBase
 
       await _client.Videos.DownloadAsync(
         new IStreamInfo[] { audioInfo },
-        new ConversionRequestBuilder(audioPath).Build()
+        new ConversionRequestBuilder(audioPath)
+          .SetPreset(ConversionPreset.UltraFast)
+          .Build()
       );
 
       var stream = new FileStream(audioPath, FileMode.Open);
