@@ -11,6 +11,20 @@ namespace SkyTube.Controllers;
 [Produces("application/json")]
 public class SearchController : ControllerBase
 {
+  static private double _getVideoSize
+  (
+    IVideoStreamInfo videoStream, IEnumerable<IAudioStreamInfo> audioStream
+  )
+  {
+    var audio = audioStream
+      .Where(a => a.Bitrate.KiloBitsPerSecond <= videoStream.Bitrate.KiloBitsPerSecond)
+      .FirstOrDefault() ?? audioStream.Last();
+
+    return Math.Round(
+      (videoStream.Size.MegaBytes + audio.Size.MegaBytes), 2
+    );
+  }
+
   [HttpGet("video")]
   [ProducesResponseType(typeof(VideoInfo), 200)]
   [ProducesResponseType(typeof(HttpMessage), 400)]
@@ -24,9 +38,11 @@ public class SearchController : ControllerBase
       var video = await youtube.Videos.GetAsync(url.ToString());
 
       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
+
       var audioStreams = streamManifest.GetAudioStreams()
         .Where(s => s.Container == Container.Mp4)
-        .DistinctBy(s => s.Bitrate);
+        .DistinctBy(s => s.Bitrate.KiloBitsPerSecond)
+        .OrderByDescending(s => s.Bitrate.KiloBitsPerSecond);
 
       var audioQualities = audioStreams
         .Select(s => new Media(
@@ -36,14 +52,13 @@ public class SearchController : ControllerBase
         ))
         .ToList();
 
+
       var videoQualities = streamManifest
         .GetVideoStreams()
         .Where(s => s.Container == Container.Mp4)
         .DistinctBy(s => s.VideoQuality)
         .Select(s => new Media(
-          size: Math.Round(s.Size.MegaBytes + audioStreams
-            .Where(a => a.Bitrate.KiloBitsPerSecond <= s.Bitrate.KiloBitsPerSecond)
-            .First().Size.MegaBytes, 2),
+          size: _getVideoSize(s, audioStreams),
           quality: s.VideoQuality.ToString(),
           bitrate: Math.Round(s.Bitrate.KiloBitsPerSecond, 2)
         ))
