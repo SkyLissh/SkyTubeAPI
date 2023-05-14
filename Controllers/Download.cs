@@ -38,7 +38,7 @@ public class DownloadController : ControllerBase
 
       if (audioInfo == null) return BadRequest(new HttpMessage("Invalid quality"));
 
-      var audioPath = $"/tmp/{video.Title}.mp4";
+      var audioPath = $"/tmp/{video.Id.Value}.mp3";
 
       await _client.Videos.DownloadAsync(
         new IStreamInfo[] { audioInfo },
@@ -49,7 +49,7 @@ public class DownloadController : ControllerBase
 
       System.IO.File.Delete(audioPath);
 
-      return File(stream, "audio/mpeg", $"{video.Title}.mp4");
+      return File(stream, "audio/mpeg", $"{video.Id.Value}.mp3");
     }
     catch (UriFormatException)
     {
