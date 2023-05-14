@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using YoutubeExplode;
-using YoutubeExplode.Videos;
 
 using SkyTube.Schemas;
 using YoutubeExplode.Videos.Streams;
@@ -13,7 +12,7 @@ namespace SkyTube.Controllers;
 public class SearchController : ControllerBase
 {
   [HttpGet("video")]
-  [ProducesResponseType(typeof(Video), 200)]
+  [ProducesResponseType(typeof(VideoInfo), 200)]
   [ProducesResponseType(typeof(HttpMessage), 400)]
   public async Task<ActionResult<VideoInfo>> GetVideos([FromQuery] string url)
   {

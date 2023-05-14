@@ -56,7 +56,7 @@ FROM dev AS build
 
 COPY . ./
 
-RUN dotnet build -c Release -o /SkyTube/out
+RUN dotnet publish -c Release -o /SkyTube/out
 
 
 # === Production image ===

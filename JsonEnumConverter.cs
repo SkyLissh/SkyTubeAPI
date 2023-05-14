@@ -28,7 +28,8 @@ public class JsonEnumConverter<TEnum> : JsonConverter<TEnum> where TEnum : struc
     foreach (var value in Enum.GetValues<TEnum>())
     {
       var enumMember = type.GetMember(value.ToString())[0];
-      var attr = enumMember.GetCustomAttributes(typeof(JsonPropertyNameAttribute), false)
+      var attr = enumMember
+          .GetCustomAttributes(typeof(JsonPropertyNameAttribute), false)
           .Cast<JsonPropertyNameAttribute>()
           .FirstOrDefault();
 
@@ -55,7 +56,6 @@ public class JsonEnumConverter<TEnum> : JsonConverter<TEnum> where TEnum : struc
   public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
   {
     var type = reader.TokenType;
-    Console.WriteLine($"Type: {type}");
     if (type == JsonTokenType.String)
     {
       var stringValue = reader.GetString();
