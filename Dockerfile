@@ -38,10 +38,11 @@ COPY --from=builder /lib/*-linux-gnu/* /lib/
 COPY ./scripts/entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+WORKDIR /SkyTube
+
 # === Development image ===
 FROM base AS dev
 
-WORKDIR /SkyTube
 COPY ./SkyTube.csproj .
 
 RUN dotnet restore
