@@ -65,7 +65,9 @@ FROM base AS prod
 
 # Setup Permissions
 RUN dotnet dev-certs https --clean \
-  && dotnet dev-certs https --trust
+  && dotnet dev-certs https --trust \
+  && -E dotnet dev-certs https -ep /usr/local/share/ca-certificates/asptnet/https.crt --format PEM \
+  && update-ca-certificates
 
 RUN groupadd -r dotnet && useradd -m -d /dotnet -r -g dotnet dotnet \
   && chown dotnet:dotnet -R /SkyTube
