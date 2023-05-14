@@ -24,23 +24,27 @@ public class SearchController : ControllerBase
       var video = await youtube.Videos.GetAsync(url.ToString());
 
       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
+      var audioStreams = streamManifest.GetAudioStreams()
+        .Where(s => s.Container == Container.Mp4)
+        .DistinctBy(s => s.Bitrate);
+
+      var audioQualities = audioStreams
+        .Select(s => new Media(
+          size: Math.Round(s.Size.MegaBytes, 2),
+          quality: s.Bitrate.ToString(),
+          bitrate: Math.Round(s.Bitrate.KiloBitsPerSecond, 2)
+        ))
+        .ToList();
+
       var videoQualities = streamManifest
         .GetVideoStreams()
         .Where(s => s.Container == Container.Mp4)
         .DistinctBy(s => s.VideoQuality)
         .Select(s => new Media(
-          size: Math.Round(s.Size.MegaBytes, 2),
+          size: Math.Round(s.Size.MegaBytes + audioStreams
+            .Where(a => a.Bitrate.KiloBitsPerSecond <= s.Bitrate.KiloBitsPerSecond)
+            .First().Size.MegaBytes, 2),
           quality: s.VideoQuality.ToString(),
-          bitrate: Math.Round(s.Bitrate.KiloBitsPerSecond, 2)
-        ))
-        .ToList();
-
-      var audioQualities = streamManifest
-        .GetAudioStreams()
-        .DistinctBy(s => s.Bitrate)
-        .Select(s => new Media(
-          size: Math.Round(s.Size.MegaBytes, 2),
-          quality: s.Bitrate.ToString(),
           bitrate: Math.Round(s.Bitrate.KiloBitsPerSecond, 2)
         ))
         .ToList();

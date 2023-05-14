@@ -32,12 +32,13 @@ public class DownloadController : ControllerBase
 
       var audioInfo = streamManifest
         .GetAudioStreams()
+        .Where(s => s.Container == Container.Mp4)
         .Where(s => Math.Round(s.Bitrate.KiloBitsPerSecond, 2) == quality)
         .FirstOrDefault();
 
       if (audioInfo == null) return BadRequest(new HttpMessage("Invalid quality"));
 
-      var audioPath = $"/tmp/{video.Title}.mp3";
+      var audioPath = $"/tmp/{video.Title}.mp4";
 
       await _client.Videos.DownloadAsync(
         new IStreamInfo[] { audioInfo },
@@ -48,7 +49,7 @@ public class DownloadController : ControllerBase
 
       System.IO.File.Delete(audioPath);
 
-      return File(stream, "audio/mpeg", $"{video.Title}.mp3");
+      return File(stream, "audio/mpeg", $"{video.Title}.mp4");
     }
     catch (UriFormatException)
     {
@@ -89,52 +90,38 @@ public class DownloadController : ControllerBase
 
       var streamManifest = await _client.Videos.Streams.GetManifestAsync(url);
 
-      if (qualityVideo > Quality.P720)
-      {
-        var videoInfo = streamManifest
-          .GetVideoStreams()
-          .Where(s => s.Container == Container.Mp4)
-          .Where(s => s.VideoQuality.Label == qualityVideo.GetName())
-          .FirstOrDefault();
-
-        var audioInfo = streamManifest
-          .GetAudioStreams()
-          .Where(s => s.Container == Container.Mp4)
-          .GetWithHighestBitrate();
-
-        if (videoInfo == null || audioInfo == null)
-        {
-          return BadRequest(new HttpMessage("Invalid quality"));
-        }
-
-        var videoPath = $"/tmp/{video.Title}.mp4";
-
-        await _client.Videos.DownloadAsync(
-          new IStreamInfo[] { audioInfo, videoInfo! },
-          new ConversionRequestBuilder(videoPath).Build()
-        );
-
-        var stream = new FileStream(videoPath, FileMode.Open);
-
-        System.IO.File.Delete(videoPath);
-
-        return File(stream, "video/mp4", $"{video.Title}.mp4");
-      }
-
-      var streamInfo = streamManifest
-        .GetMuxedStreams()
+      var videoInfo = streamManifest
+        .GetVideoStreams()
         .Where(s => s.Container == Container.Mp4)
         .Where(s => s.VideoQuality.Label == qualityVideo.GetName())
         .FirstOrDefault();
 
+      var audioInfo = streamManifest
+        .GetAudioStreams()
+        .Where(s => s.Container == Container.Mp4)
+        .OrderByDescending(s => s.Bitrate.KiloBitsPerSecond)
+        .Where(
+          s => s.Bitrate.KiloBitsPerSecond <= videoInfo!.Bitrate.KiloBitsPerSecond
+        )
+        .FirstOrDefault();
 
-      if (streamInfo == null) return BadRequest(new HttpMessage("Invalid quality"));
+      if (videoInfo == null || audioInfo == null)
+      {
+        return BadRequest(new HttpMessage("Invalid quality"));
+      }
 
-      return File(
-        await _client.Videos.Streams.GetAsync(streamInfo),
-        "video/mp4",
-        $"{video.Title}.mp4"
+      var videoPath = $"/tmp/{video.Title}.mp4";
+
+      await _client.Videos.DownloadAsync(
+        new IStreamInfo[] { audioInfo, videoInfo! },
+        new ConversionRequestBuilder(videoPath).Build()
       );
+
+      var stream = new FileStream(videoPath, FileMode.Open);
+
+      System.IO.File.Delete(videoPath);
+
+      return File(stream, "video/mp4", $"{video.Title}.mp4");
     }
     catch (ArgumentException)
     {
